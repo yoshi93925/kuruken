@@ -17,10 +17,10 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       display: flex;
       flex-direction: column;
-      background-color: #0099e5;
+      background-color: #008be2;
     }
 
-    /* 上部青色ヘッダー */
+    /* 上部ヘッダー */
     .header {
       background-color: #008be2;
       color: #fff;
@@ -37,7 +37,6 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      letter-spacing: 0.5px;
     }
     .header-btn {
       background: none;
@@ -50,7 +49,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
     }
     .header-btn:active {
       opacity: 0.7;
@@ -84,7 +82,6 @@
       border: none;
       background: none;
       border-radius: 8px 8px 0 0;
-      transition: background-color 0.15s, color 0.15s;
       flex-shrink: 0;
     }
     .tab-item.active {
@@ -92,11 +89,11 @@
       color: #0077c8;
     }
 
-    /* 接近情報 iframe 表示コンテナ */
+    /* iframe 表示領域 */
     .frame-container {
       flex: 1;
       width: 100%;
-      background: #0099e5;
+      background: #fff;
       position: relative;
     }
     .frame-container iframe {
@@ -184,9 +181,6 @@
       cursor: pointer;
       margin-top: 4px;
     }
-    .btn-add:hover {
-      background: #0077c8;
-    }
     .list-title {
       font-size: 0.9rem;
       font-weight: bold;
@@ -205,12 +199,13 @@
       align-items: center;
       background: #fff;
       border: 1px solid #e2e8f0;
-      padding: 8px 12px;
+      padding: 8px 10px;
       border-radius: 6px;
     }
     .item-info {
       overflow: hidden;
       margin-right: 8px;
+      flex: 1;
     }
     .item-title {
       font-weight: bold;
@@ -220,21 +215,31 @@
       text-overflow: ellipsis;
     }
     .item-url {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: #64748b;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .btn-delete {
-      background: #ef4444;
-      color: #fff;
+    .item-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .btn-action {
       border: none;
-      padding: 4px 8px;
+      padding: 5px 8px;
       border-radius: 4px;
       font-size: 0.75rem;
       cursor: pointer;
-      flex-shrink: 0;
+    }
+    .btn-edit {
+      background: #0ea5e9;
+      color: #fff;
+    }
+    .btn-delete {
+      background: #ef4444;
+      color: #fff;
     }
     .reset-area {
       text-align: right;
@@ -260,7 +265,7 @@
   <!-- 横並びのタブ一覧 -->
   <div class="tab-bar" id="tabBar"></div>
 
-  <!-- 接近情報表示エリア -->
+  <!-- 接近情報表示 iframe -->
   <div class="frame-container">
     <iframe id="busFrame" src="" title="接近情報"></iframe>
   </div>
@@ -269,19 +274,20 @@
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>停留所タブ設定</h2>
+        <h2 id="modalFormTitle">停留所タブの追加</h2>
         <button class="close-btn" id="closeModalBtn">&times;</button>
       </div>
 
-      <!-- 新規登録フォーム -->
-      <form id="addForm" class="form-group">
+      <!-- 登録/更新フォーム -->
+      <form id="busForm" class="form-group">
+        <input type="hidden" id="editIndex" value="-1">
         <label for="titleInput">タブ名称（停留所名）</label>
         <input type="text" id="titleInput" placeholder="例: 八丁堀" required>
 
         <label for="urlInput">URL</label>
-        <input type="url" id="urlInput" placeholder="https://kuruken.jp/..." required>
+        <input type="url" id="urlInput" placeholder="くるけんの個別URLを入力" required>
 
-        <button type="submit" class="btn-add">追加する</button>
+        <button type="submit" class="btn-add" id="submitBtn">登録する</button>
       </form>
 
       <!-- 登録一覧 -->
@@ -289,43 +295,40 @@
       <div class="registered-items" id="registeredItems"></div>
 
       <div class="reset-area">
-        <button class="btn-reset" id="resetDefaultBtn">初期設定に戻す</button>
+        <button class="btn-reset" id="clearAllBtn">全て消去</button>
       </div>
     </div>
   </div>
 
   <script>
-    // 2枚目の画像に合わせた初期デフォルト一覧
+    // ▼ 元のHTMLで実際に設定されていたURLをここに貼り付けてください
     const DEFAULT_BUS_ITEMS = [
-      { title: "下岩の上", url: "https://kuruken.jp/Approaching?busstopId=1626" },
-      { title: "女学院前", url: "https://kuruken.jp/Approaching?busstopId=1625" },
-      { title: "広島BC",   url: "https://kuruken.jp/Approaching?busstopId=1623" },
-      { title: "広島駅",   url: "https://kuruken.jp/Approaching?busstopId=1622" },
-      { title: "八丁堀",   url: "https://kuruken.jp/Approaching?busstopId=1624" }
+      { title: "下岩の上", url: "元のHTMLにあった下岩の上のURL" },
+      { title: "女学院前", url: "元のHTMLにあった女学院前のURL" },
+      { title: "広島BC",   url: "元のHTMLにあった広島BCのURL" },
+      { title: "広島駅",   url: "元のHTMLにあった広島駅のURL" },
+      { title: "八丁堀",   url: "元のHTMLにあった八丁堀のURL" }
     ];
 
-    const STORAGE_KEY = 'kuruken_bus_items';
+    const STORAGE_KEY = 'kuruken_bus_items_v2';
     let currentIndex = 0;
 
-    // データ読み込み
     function loadItems() {
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
         try {
           return JSON.parse(data);
         } catch (e) {
-          console.error("データ読み込み失敗", e);
+          console.error(e);
         }
       }
       return [...DEFAULT_BUS_ITEMS];
     }
 
-    // データ保存
     function saveItems(items) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     }
 
-    // タブおよびiframeの表示更新
     function renderTabs(items) {
       const tabBar = document.getElementById('tabBar');
       const frame = document.getElementById('busFrame');
@@ -351,7 +354,12 @@
         tabBar.appendChild(btn);
       });
 
-      frame.src = items[currentIndex].url;
+      // 有効なURL形式の場合のみiframeにセット
+      if (items[currentIndex] && items[currentIndex].url.startsWith('http')) {
+        frame.src = items[currentIndex].url;
+      } else {
+        frame.src = 'about:blank';
+      }
     }
 
     function updateActiveTab(items) {
@@ -360,18 +368,17 @@
         tab.classList.toggle('active', i === currentIndex);
       });
       const frame = document.getElementById('busFrame');
-      if (items[currentIndex]) {
+      if (items[currentIndex] && items[currentIndex].url.startsWith('http')) {
         frame.src = items[currentIndex].url;
       }
     }
 
-    // モーダル内の登録アイテム一覧描画
     function renderSettingsList(items) {
       const container = document.getElementById('registeredItems');
       container.innerHTML = '';
 
       if (items.length === 0) {
-        container.innerHTML = '<div style="font-size:0.85rem; color:#94a3b8;">登録されている停留所はありません。</div>';
+        container.innerHTML = '<div style="font-size:0.85rem; color:#94a3b8; text-align:center; padding:10px;">登録がありません。上部から追加してください。</div>';
         return;
       }
 
@@ -383,8 +390,24 @@
         info.className = 'item-info';
         info.innerHTML = `<div class="item-title">${escapeHtml(item.title)}</div><div class="item-url">${escapeHtml(item.url)}</div>`;
 
+        const actions = document.createElement('div');
+        actions.className = 'item-actions';
+
+        // 編集ボタン
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-action btn-edit';
+        editBtn.textContent = '編集';
+        editBtn.onclick = () => {
+          document.getElementById('titleInput').value = item.title;
+          document.getElementById('urlInput').value = item.url;
+          document.getElementById('editIndex').value = index;
+          document.getElementById('submitBtn').textContent = '変更を保存';
+          document.getElementById('modalFormTitle').textContent = '停留所タブの編集';
+        };
+
+        // 削除ボタン
         const delBtn = document.createElement('button');
-        delBtn.className = 'btn-delete';
+        delBtn.className = 'btn-action btn-delete';
         delBtn.textContent = '削除';
         delBtn.onclick = () => {
           items.splice(index, 1);
@@ -395,14 +418,16 @@
           renderAll();
         };
 
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
         row.appendChild(info);
-        row.appendChild(delBtn);
+        row.appendChild(actions);
         container.appendChild(row);
       });
     }
 
     function escapeHtml(str) {
-      return str.replace(/[&<>'"]/g, tag => ({
+      return (str || '').replace(/[&<>'"]/g, tag => ({
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
@@ -417,9 +442,19 @@
       renderSettingsList(items);
     }
 
-    // モーダル操作
+    // フォームリセット
+    function resetForm() {
+      document.getElementById('titleInput').value = '';
+      document.getElementById('urlInput').value = '';
+      document.getElementById('editIndex').value = '-1';
+      document.getElementById('submitBtn').textContent = '登録する';
+      document.getElementById('modalFormTitle').textContent = '停留所タブの追加';
+    }
+
+    // モーダルイベント
     const modal = document.getElementById('settingsModal');
     document.getElementById('openModalBtn').addEventListener('click', () => {
+      resetForm();
       modal.classList.add('active');
     });
     document.getElementById('closeModalBtn').addEventListener('click', () => {
@@ -429,36 +464,34 @@
       if (e.target === modal) modal.classList.remove('active');
     });
 
-    // 新規登録
-    document.getElementById('addForm').addEventListener('submit', (e) => {
+    // 登録・更新処理
+    document.getElementById('busForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      const titleInput = document.getElementById('titleInput');
-      const urlInput = document.getElementById('urlInput');
-
-      const newItem = {
-        title: titleInput.value.trim(),
-        url: urlInput.value.trim()
-      };
+      const title = document.getElementById('titleInput').value.trim();
+      const url = document.getElementById('urlInput').value.trim();
+      const editIndex = parseInt(document.getElementById('editIndex').value, 10);
 
       const items = loadItems();
-      items.push(newItem);
-      saveItems(items);
-      renderAll();
+      if (editIndex >= 0 && editIndex < items.length) {
+        items[editIndex] = { title, url };
+      } else {
+        items.push({ title, url });
+      }
 
-      titleInput.value = '';
-      urlInput.value = '';
+      saveItems(items);
+      resetForm();
+      renderAll();
     });
 
-    // 初期化
-    document.getElementById('resetDefaultBtn').addEventListener('click', () => {
-      if (confirm('初期設定（下岩の上・女学院前・広島BC・広島駅・八丁堀）に戻しますか？')) {
-        saveItems(DEFAULT_BUS_ITEMS);
+    // 全消去
+    document.getElementById('clearAllBtn').addEventListener('click', () => {
+      if (confirm('登録データをすべて消去しますか？')) {
+        saveItems([]);
         currentIndex = 0;
         renderAll();
       }
     });
 
-    // 実行
     renderAll();
   </script>
 </body>

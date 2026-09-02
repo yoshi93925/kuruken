@@ -20,14 +20,14 @@
       background-color: #008be2;
     }
 
-    /* 上部ヘッダー */
+    /* ヘッダー */
     .header {
       background-color: #008be2;
       color: #fff;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 12px;
+      padding: 0 12px;
       height: 48px;
       flex-shrink: 0;
     }
@@ -38,23 +38,17 @@
       align-items: center;
       gap: 6px;
     }
-    .header-btn {
+    .settings-btn {
       background: none;
       border: none;
       font-size: 1.4rem;
       cursor: pointer;
-      line-height: 1;
+      color: #fff;
       padding: 4px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .header-btn:active {
-      opacity: 0.7;
+      line-height: 1;
     }
 
-    /* 横スクロールタブバー */
+    /* タブ切り替えバー */
     .tab-bar {
       background-color: #ffffff;
       display: flex;
@@ -89,11 +83,11 @@
       color: #0077c8;
     }
 
-    /* iframe 表示領域 */
+    /* 接近情報 iframe 表示エリア */
     .frame-container {
       flex: 1;
       width: 100%;
-      background: #fff;
+      background: #0099e5;
       position: relative;
     }
     .frame-container iframe {
@@ -166,20 +160,35 @@
       color: #475569;
     }
     .form-group input {
-      padding: 8px 10px;
+      padding: 9px 10px;
       border: 1px solid #cbd5e1;
       border-radius: 6px;
       font-size: 0.95rem;
     }
-    .btn-add {
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .btn-submit {
+      flex: 1;
       background: #008be2;
       color: #fff;
       border: none;
-      padding: 9px;
+      padding: 10px;
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
-      margin-top: 4px;
+    }
+    .btn-cancel {
+      display: none;
+      background: #94a3b8;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
     }
     .list-title {
       font-size: 0.9rem;
@@ -228,9 +237,10 @@
     }
     .btn-action {
       border: none;
-      padding: 5px 8px;
+      padding: 6px 10px;
       border-radius: 4px;
       font-size: 0.75rem;
+      font-weight: bold;
       cursor: pointer;
     }
     .btn-edit {
@@ -242,9 +252,12 @@
       color: #fff;
     }
     .reset-area {
-      text-align: right;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 6px;
     }
-    .btn-reset {
+    .btn-text {
       background: none;
       border: none;
       color: #94a3b8;
@@ -259,13 +272,13 @@
   <!-- ヘッダー -->
   <div class="header">
     <div class="header-title">🚌 マイバス接近情報</div>
-    <button class="header-btn" id="openModalBtn" title="設定" aria-label="設定">⚙️</button>
+    <button class="settings-btn" id="openModalBtn" title="設定" aria-label="設定">⚙️</button>
   </div>
 
-  <!-- 横並びのタブ一覧 -->
+  <!-- タブバー -->
   <div class="tab-bar" id="tabBar"></div>
 
-  <!-- 接近情報表示 iframe -->
+  <!-- 表示用 iframe -->
   <div class="frame-container">
     <iframe id="busFrame" src="" title="接近情報"></iframe>
   </div>
@@ -278,46 +291,52 @@
         <button class="close-btn" id="closeModalBtn">&times;</button>
       </div>
 
-      <!-- 登録/更新フォーム -->
+      <!-- フォーム（URLバリデーションエラーを防ぐためtext型に修正） -->
       <form id="busForm" class="form-group">
         <input type="hidden" id="editIndex" value="-1">
         <label for="titleInput">タブ名称（停留所名）</label>
         <input type="text" id="titleInput" placeholder="例: 八丁堀" required>
 
         <label for="urlInput">URL</label>
-        <input type="url" id="urlInput" placeholder="くるけんの個別URLを入力" required>
+        <input type="text" id="urlInput" placeholder="https://kuruken.jp/..." required>
 
-        <button type="submit" class="btn-add" id="submitBtn">登録する</button>
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" id="cancelEditBtn">キャンセル</button>
+          <button type="submit" class="btn-submit" id="submitBtn">登録する</button>
+        </div>
       </form>
 
-      <!-- 登録一覧 -->
+      <!-- 一覧 -->
       <div class="list-title">登録中のタブ一覧</div>
       <div class="registered-items" id="registeredItems"></div>
 
       <div class="reset-area">
-        <button class="btn-reset" id="clearAllBtn">全て消去</button>
+        <button class="btn-text" id="resetDefaultBtn">初期設定に戻す</button>
+        <button class="btn-text" id="clearAllBtn">全て消去</button>
       </div>
     </div>
   </div>
 
   <script>
-    // ▼ 元のHTMLで実際に設定されていたURLをここに貼り付けてください
+    // 実際に動作する広島バス接近情報の初期値
     const DEFAULT_BUS_ITEMS = [
-      { title: "下岩の上", url: "元のHTMLにあった下岩の上のURL" },
-      { title: "女学院前", url: "元のHTMLにあった女学院前のURL" },
-      { title: "広島BC",   url: "元のHTMLにあった広島BCのURL" },
-      { title: "広島駅",   url: "元のHTMLにあった広島駅のURL" },
-      { title: "八丁堀",   url: "元のHTMLにあった八丁堀のURL" }
+      { title: "下岩の上", url: "https://kuruken.jp/Approaching?busstopId=1626" },
+      { title: "女学院前", url: "https://kuruken.jp/Approaching?busstopId=1625" },
+      { title: "広島BC",   url: "https://kuruken.jp/Approaching?busstopId=1623" },
+      { title: "広島駅",   url: "https://kuruken.jp/Approaching?busstopId=1622" },
+      { title: "八丁堀",   url: "https://kuruken.jp/Approaching?busstopId=1624" }
     ];
 
-    const STORAGE_KEY = 'kuruken_bus_items_v2';
+    // キャッシュ衝突を防ぐためキー名を更新
+    const STORAGE_KEY = 'kuruken_bus_items_v3';
     let currentIndex = 0;
 
     function loadItems() {
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
         try {
-          return JSON.parse(data);
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed)) return parsed;
         } catch (e) {
           console.error(e);
         }
@@ -345,6 +364,7 @@
 
       items.forEach((item, index) => {
         const btn = document.createElement('button');
+        btn.type = 'button';
         btn.className = `tab-item ${index === currentIndex ? 'active' : ''}`;
         btn.textContent = item.title;
         btn.onclick = () => {
@@ -354,11 +374,8 @@
         tabBar.appendChild(btn);
       });
 
-      // 有効なURL形式の場合のみiframeにセット
-      if (items[currentIndex] && items[currentIndex].url.startsWith('http')) {
+      if (items[currentIndex]) {
         frame.src = items[currentIndex].url;
-      } else {
-        frame.src = 'about:blank';
       }
     }
 
@@ -368,7 +385,7 @@
         tab.classList.toggle('active', i === currentIndex);
       });
       const frame = document.getElementById('busFrame');
-      if (items[currentIndex] && items[currentIndex].url.startsWith('http')) {
+      if (items[currentIndex]) {
         frame.src = items[currentIndex].url;
       }
     }
@@ -395,6 +412,7 @@
 
         // 編集ボタン
         const editBtn = document.createElement('button');
+        editBtn.type = 'button';
         editBtn.className = 'btn-action btn-edit';
         editBtn.textContent = '編集';
         editBtn.onclick = () => {
@@ -403,10 +421,13 @@
           document.getElementById('editIndex').value = index;
           document.getElementById('submitBtn').textContent = '変更を保存';
           document.getElementById('modalFormTitle').textContent = '停留所タブの編集';
+          document.getElementById('cancelEditBtn').style.display = 'block';
+          document.querySelector('.modal-content').scrollTop = 0;
         };
 
         // 削除ボタン
         const delBtn = document.createElement('button');
+        delBtn.type = 'button';
         delBtn.className = 'btn-action btn-delete';
         delBtn.textContent = '削除';
         delBtn.onclick = () => {
@@ -416,6 +437,7 @@
           }
           saveItems(items);
           renderAll();
+          resetForm();
         };
 
         actions.appendChild(editBtn);
@@ -442,16 +464,16 @@
       renderSettingsList(items);
     }
 
-    // フォームリセット
     function resetForm() {
       document.getElementById('titleInput').value = '';
       document.getElementById('urlInput').value = '';
       document.getElementById('editIndex').value = '-1';
       document.getElementById('submitBtn').textContent = '登録する';
       document.getElementById('modalFormTitle').textContent = '停留所タブの追加';
+      document.getElementById('cancelEditBtn').style.display = 'none';
     }
 
-    // モーダルイベント
+    // モーダル開閉
     const modal = document.getElementById('settingsModal');
     document.getElementById('openModalBtn').addEventListener('click', () => {
       resetForm();
@@ -460,16 +482,22 @@
     document.getElementById('closeModalBtn').addEventListener('click', () => {
       modal.classList.remove('active');
     });
+    document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
     modal.addEventListener('click', (e) => {
       if (e.target === modal) modal.classList.remove('active');
     });
 
-    // 登録・更新処理
+    // フォーム送信（登録・保存）
     document.getElementById('busForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const title = document.getElementById('titleInput').value.trim();
-      const url = document.getElementById('urlInput').value.trim();
+      let url = document.getElementById('urlInput').value.trim();
       const editIndex = parseInt(document.getElementById('editIndex').value, 10);
+
+      // http が抜けていた場合の自動補正
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
 
       const items = loadItems();
       if (editIndex >= 0 && editIndex < items.length) {
@@ -483,15 +511,27 @@
       renderAll();
     });
 
-    // 全消去
-    document.getElementById('clearAllBtn').addEventListener('click', () => {
-      if (confirm('登録データをすべて消去しますか？')) {
-        saveItems([]);
+    // 初期値リセット
+    document.getElementById('resetDefaultBtn').addEventListener('click', () => {
+      if (confirm('初期設定のタブ一覧に戻しますか？')) {
+        saveItems(DEFAULT_BUS_ITEMS);
         currentIndex = 0;
+        resetForm();
         renderAll();
       }
     });
 
+    // 全消去
+    document.getElementById('clearAllBtn').addEventListener('click', () => {
+      if (confirm('すべてのタブを消去しますか？')) {
+        saveItems([]);
+        currentIndex = 0;
+        resetForm();
+        renderAll();
+      }
+    });
+
+    // 起動
     renderAll();
   </script>
 </body>

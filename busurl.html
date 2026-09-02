@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>マイバス接近情報</title>
   <style>
     * {
@@ -10,65 +10,100 @@
       margin: 0;
       padding: 0;
     }
-    body {
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: #f4f6f8;
-      color: #333;
-      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      background-color: #0099e5;
     }
+
+    /* 上部青色ヘッダー */
     .header {
+      background-color: #008be2;
+      color: #fff;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      max-width: 480px;
-      margin: 0 auto 20px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #e0e0e0;
+      padding: 8px 12px;
+      height: 48px;
+      flex-shrink: 0;
     }
-    .header h1 {
-      font-size: 1.25rem;
+    .header-title {
+      font-size: 1.05rem;
       font-weight: bold;
       display: flex;
       align-items: center;
       gap: 6px;
+      letter-spacing: 0.5px;
     }
-    .settings-btn {
+    .header-btn {
       background: none;
       border: none;
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       cursor: pointer;
       line-height: 1;
       padding: 4px;
       border-radius: 6px;
-      transition: background 0.2s;
-    }
-    .settings-btn:hover {
-      background: #e2e8f0;
-    }
-    .btn-list {
       display: flex;
-      flex-direction: column;
-      gap: 12px;
-      max-width: 480px;
-      margin: 0 auto;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
     }
-    .bus-btn {
-      display: block;
+    .header-btn:active {
+      opacity: 0.7;
+    }
+
+    /* 横スクロールタブバー */
+    .tab-bar {
       background-color: #ffffff;
-      color: #1e293b;
-      text-decoration: none;
-      padding: 14px 18px;
-      border-radius: 10px;
-      font-size: 1.05rem;
-      font-weight: 600;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      border: 1px solid #cbd5e1;
-      text-align: center;
-      transition: background-color 0.2s, transform 0.1s;
+      display: flex;
+      overflow-x: auto;
+      white-space: nowrap;
+      height: 44px;
+      flex-shrink: 0;
+      border-bottom: 1px solid #d1d5db;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-    .bus-btn:active {
-      transform: scale(0.98);
-      background-color: #f1f5f9;
+    .tab-bar::-webkit-scrollbar {
+      display: none;
+    }
+    .tab-item {
+      padding: 0 16px;
+      height: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: #333333;
+      cursor: pointer;
+      border: none;
+      background: none;
+      border-radius: 8px 8px 0 0;
+      transition: background-color 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .tab-item.active {
+      background-color: #e3f2fd;
+      color: #0077c8;
+    }
+
+    /* 接近情報 iframe 表示コンテナ */
+    .frame-container {
+      flex: 1;
+      width: 100%;
+      background: #0099e5;
+      position: relative;
+    }
+    .frame-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
     }
 
     /* 設定モーダル */
@@ -79,11 +114,11 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.5);
       justify-content: center;
       align-items: center;
       padding: 16px;
-      z-index: 1000;
+      z-index: 9999;
     }
     .modal-overlay.active {
       display: flex;
@@ -92,32 +127,36 @@
       background: #fff;
       border-radius: 12px;
       width: 100%;
-      max-width: 460px;
-      max-height: 90vh;
+      max-width: 440px;
+      max-height: 85vh;
       overflow-y: auto;
-      padding: 20px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      padding: 18px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      color: #333;
     }
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
     }
     .modal-header h2 {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
     }
     .close-btn {
       background: none;
       border: none;
-      font-size: 1.5rem;
+      font-size: 1.6rem;
       cursor: pointer;
-      color: #64748b;
+      color: #666;
+      line-height: 1;
     }
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 16px;
       background: #f8fafc;
       padding: 12px;
@@ -125,8 +164,8 @@
       border: 1px solid #e2e8f0;
     }
     .form-group label {
-      font-size: 0.85rem;
-      font-weight: 600;
+      font-size: 0.8rem;
+      font-weight: bold;
       color: #475569;
     }
     .form-group input {
@@ -136,23 +175,23 @@
       font-size: 0.95rem;
     }
     .btn-add {
-      background: #2563eb;
+      background: #008be2;
       color: #fff;
       border: none;
-      padding: 10px;
+      padding: 9px;
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
       margin-top: 4px;
     }
     .btn-add:hover {
-      background: #1d4ed8;
+      background: #0077c8;
     }
     .list-title {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: bold;
       margin-bottom: 8px;
-      color: #334155;
+      color: #475569;
     }
     .registered-items {
       display: flex;
@@ -175,7 +214,7 @@
     }
     .item-title {
       font-weight: bold;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -193,7 +232,7 @@
       border: none;
       padding: 4px 8px;
       border-radius: 4px;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       cursor: pointer;
       flex-shrink: 0;
     }
@@ -204,7 +243,7 @@
       background: none;
       border: none;
       color: #94a3b8;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       cursor: pointer;
       text-decoration: underline;
     }
@@ -212,31 +251,41 @@
 </head>
 <body>
 
+  <!-- ヘッダー -->
   <div class="header">
-    <h1>🚌 マイバス接近情報</h1>
-    <button class="settings-btn" id="openModalBtn" title="設定" aria-label="設定">⚙️</button>
+    <div class="header-title">🚌 マイバス接近情報</div>
+    <button class="header-btn" id="openModalBtn" title="設定" aria-label="設定">⚙️</button>
   </div>
 
-  <div class="btn-list" id="busList"></div>
+  <!-- 横並びのタブ一覧 -->
+  <div class="tab-bar" id="tabBar"></div>
 
+  <!-- 接近情報表示エリア -->
+  <div class="frame-container">
+    <iframe id="busFrame" src="" title="接近情報"></iframe>
+  </div>
+
+  <!-- 設定モーダル -->
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>リンク設定</h2>
+        <h2>停留所タブ設定</h2>
         <button class="close-btn" id="closeModalBtn">&times;</button>
       </div>
 
+      <!-- 新規登録フォーム -->
       <form id="addForm" class="form-group">
-        <label for="titleInput">停留所・タイトル</label>
-        <input type="text" id="titleInput" placeholder="例: 広島駅" required>
+        <label for="titleInput">タブ名称（停留所名）</label>
+        <input type="text" id="titleInput" placeholder="例: 八丁堀" required>
 
         <label for="urlInput">URL</label>
-        <input type="url" id="urlInput" placeholder="https://..." required>
+        <input type="url" id="urlInput" placeholder="https://kuruken.jp/..." required>
 
-        <button type="submit" class="btn-add">登録する</button>
+        <button type="submit" class="btn-add">追加する</button>
       </form>
 
-      <div class="list-title">登録済み一覧</div>
+      <!-- 登録一覧 -->
+      <div class="list-title">登録中のタブ一覧</div>
       <div class="registered-items" id="registeredItems"></div>
 
       <div class="reset-area">
@@ -246,62 +295,83 @@
   </div>
 
   <script>
-    // デフォルトの登録データ
+    // 2枚目の画像に合わせた初期デフォルト一覧
     const DEFAULT_BUS_ITEMS = [
       { title: "下岩の上", url: "https://kuruken.jp/Approaching?busstopId=1626" },
       { title: "女学院前", url: "https://kuruken.jp/Approaching?busstopId=1625" },
-      { title: "広島BC", url: "https://kuruken.jp/Approaching?busstopId=1623" },
-      { title: "広島駅", url: "https://kuruken.jp/Approaching?busstopId=1622" }
+      { title: "広島BC",   url: "https://kuruken.jp/Approaching?busstopId=1623" },
+      { title: "広島駅",   url: "https://kuruken.jp/Approaching?busstopId=1622" },
+      { title: "八丁堀",   url: "https://kuruken.jp/Approaching?busstopId=1624" }
     ];
 
     const STORAGE_KEY = 'kuruken_bus_items';
+    let currentIndex = 0;
 
-    // データの読み込み
+    // データ読み込み
     function loadItems() {
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
         try {
           return JSON.parse(data);
         } catch (e) {
-          console.error("Failed to parse local storage data", e);
+          console.error("データ読み込み失敗", e);
         }
       }
       return [...DEFAULT_BUS_ITEMS];
     }
 
-    // データの保存
+    // データ保存
     function saveItems(items) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     }
 
-    // メイン画面のリンク一覧を描画
-    function renderMainList(items) {
-      const listContainer = document.getElementById('busList');
-      listContainer.innerHTML = '';
-      
+    // タブおよびiframeの表示更新
+    function renderTabs(items) {
+      const tabBar = document.getElementById('tabBar');
+      const frame = document.getElementById('busFrame');
+      tabBar.innerHTML = '';
+
       if (items.length === 0) {
-        listContainer.innerHTML = '<div style="text-align:center; color:#64748b; padding:20px;">登録されているリンクがありません。⚙️マークから追加してください。</div>';
+        frame.src = 'about:blank';
         return;
       }
 
-      items.forEach(item => {
-        const a = document.createElement('a');
-        a.href = item.url;
-        a.className = 'bus-btn';
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.textContent = item.title;
-        listContainer.appendChild(a);
+      if (currentIndex >= items.length) {
+        currentIndex = 0;
+      }
+
+      items.forEach((item, index) => {
+        const btn = document.createElement('button');
+        btn.className = `tab-item ${index === currentIndex ? 'active' : ''}`;
+        btn.textContent = item.title;
+        btn.onclick = () => {
+          currentIndex = index;
+          updateActiveTab(items);
+        };
+        tabBar.appendChild(btn);
       });
+
+      frame.src = items[currentIndex].url;
     }
 
-    // 設定モーダル内のアイテム一覧を描画
+    function updateActiveTab(items) {
+      const tabs = document.querySelectorAll('.tab-item');
+      tabs.forEach((tab, i) => {
+        tab.classList.toggle('active', i === currentIndex);
+      });
+      const frame = document.getElementById('busFrame');
+      if (items[currentIndex]) {
+        frame.src = items[currentIndex].url;
+      }
+    }
+
+    // モーダル内の登録アイテム一覧描画
     function renderSettingsList(items) {
       const container = document.getElementById('registeredItems');
       container.innerHTML = '';
 
       if (items.length === 0) {
-        container.innerHTML = '<div style="font-size:0.85rem; color:#94a3b8;">登録されている項目はありません。</div>';
+        container.innerHTML = '<div style="font-size:0.85rem; color:#94a3b8;">登録されている停留所はありません。</div>';
         return;
       }
 
@@ -318,6 +388,9 @@
         delBtn.textContent = '削除';
         delBtn.onclick = () => {
           items.splice(index, 1);
+          if (currentIndex >= items.length) {
+            currentIndex = Math.max(0, items.length - 1);
+          }
           saveItems(items);
           renderAll();
         };
@@ -340,11 +413,11 @@
 
     function renderAll() {
       const items = loadItems();
-      renderMainList(items);
+      renderTabs(items);
       renderSettingsList(items);
     }
 
-    // モーダル開閉制御
+    // モーダル操作
     const modal = document.getElementById('settingsModal');
     document.getElementById('openModalBtn').addEventListener('click', () => {
       modal.classList.add('active');
@@ -356,7 +429,7 @@
       if (e.target === modal) modal.classList.remove('active');
     });
 
-    // 新規追加フォーム
+    // 新規登録
     document.getElementById('addForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const titleInput = document.getElementById('titleInput');
@@ -376,15 +449,16 @@
       urlInput.value = '';
     });
 
-    // 初期状態へリセット
+    // 初期化
     document.getElementById('resetDefaultBtn').addEventListener('click', () => {
-      if (confirm('初期の停留所一覧に戻しますか？')) {
+      if (confirm('初期設定（下岩の上・女学院前・広島BC・広島駅・八丁堀）に戻しますか？')) {
         saveItems(DEFAULT_BUS_ITEMS);
+        currentIndex = 0;
         renderAll();
       }
     });
 
-    // 初回初期化
+    // 実行
     renderAll();
   </script>
 </body>
